@@ -661,6 +661,7 @@ class Tetra3():
 
     def solve_from_image(self, image, fov_estimate=None, fov_max_error=None,
                          pattern_checking_stars=6, match_radius=.01, match_threshold=1e-9,
+                         extra_output:bool = False,
                          **kwargs):
         """Solve for the sky location of an image.
 
@@ -688,6 +689,13 @@ class Tetra3():
                 as a fraction of the image field of view.
             match_threshold (float, optional): Maximum allowed mismatch probability to consider
                 a tested pattern a valid match.
+            extra_output (bool, optional): Additional output of the solver, i.e., the list of vectors 
+                v_star of the matched stars in the image, the corresponding list of vectors v_database 
+                of the matching database entries as well as the transformation matrix R for which
+                | R.v_database - v_star | is minimized.
+                Note that the vectors are unit vectors defined on the celestial sphere as
+                (x, y, z) = (cos(ra) * cos(dec), sin(ra) * cos(dec), sin(dec))
+                where ra is the right ascention and dec is the declination of the object.
             **kwargs (optional): Other keyword arguments passed to
                 :meth:`tetra3.get_centroids_from_image`.
 
@@ -880,7 +888,6 @@ class Tetra3():
                                                           num_extracted_stars,
                                                           1 - prob_single_star_mismatch)
                     if prob_mismatch < match_threshold:
-
                         """Debug output
                         print(f"{num_star_matches} stars matched.")
                         for i in range(num_star_matches):
@@ -919,12 +926,24 @@ class Tetra3():
                         self._logger.debug('MATCH: %i' % len(match_tuples) + ' stars')
                         self._logger.debug('SOLVE: %.2f' % round(t_solve, 2) + ' ms')
                         self._logger.debug('RESID: %.2f' % residual + ' asec')
-                        return {'RA': ra, 'Dec': dec, 'Roll': roll, 'FOV': np.rad2deg(fov),
-                                'RMSE': residual, 'Matches': len(match_tuples),
-                                'Prob': prob_mismatch, 'T_solve': t_solve, 'T_extract': t_extract,
-                                'matched_vectors': [x[0] for x in match_tuples],
-                                'matched_database_vectors': [x[1] for x in match_tuples],
-                                'rotation_matrix': rotation_matrix}
+
+                        default_output = {
+                            'RA': ra, 'Dec': dec, 'Roll': roll, 'FOV': np.rad2deg(fov),
+                            'RMSE': residual, 'Matches': len(match_tuples),
+                            'Prob': prob_mismatch, 'T_solve': t_solve, 'T_extract': t_extract
+                        }
+
+                        if not extra_output:
+                            return default_output
+                        else:
+                            additional_data = {
+                                'Matched_image_vectors': [x[0] for x in match_tuples],
+                                'Matched_database_vectors': [x[1] for x in match_tuples],
+                                'Rotation_matrix': rotation_matrix
+                            }
+
+                            return default_output + additional_data
+
         t_solve = (precision_timestamp() - t0_solve) * 1000
         self._logger.debug('FAIL: Did not find a match to the stars! It took '
                            + str(round(t_solve)) + ' ms.')
