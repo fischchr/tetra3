@@ -693,9 +693,12 @@ class Tetra3():
                 v_star of the matched stars in the image, the corresponding list of vectors v_database 
                 of the matching database entries as well as the transformation matrix R for which
                 | R.v_database - v_star | is minimized.
-                Note that the vectors are unit vectors defined on the celestial sphere as
+                The vectors v_database are unit vectors defined on the celestial sphere as
                 (x, y, z) = (cos(ra) * cos(dec), sin(ra) * cos(dec), sin(dec))
-                where ra is the right ascention and dec is the declination of the object.
+                where ra is the right ascention and dec is the declination of the star.
+                The vectors v_star are unit vectors on the celestial sphere as imaged by the camera.
+                There, the x and y axis are defined by the orientation of the camera sensor and the 
+                z axis is defined by the line of sight of the camera.
             **kwargs (optional): Other keyword arguments passed to
                 :meth:`tetra3.get_centroids_from_image`.
 
@@ -942,7 +945,7 @@ class Tetra3():
                                 'Rotation_matrix': rotation_matrix
                             }
 
-                            return default_output + additional_data
+                            return {**default_output, **additional_data}
 
         t_solve = (precision_timestamp() - t0_solve) * 1000
         self._logger.debug('FAIL: Did not find a match to the stars! It took '
