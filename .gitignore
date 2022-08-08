@@ -4,6 +4,7 @@
 
 # Cache
 *__pycache__*
+.DS_store
 
 # Debug logs
 /debug/*

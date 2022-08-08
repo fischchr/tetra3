@@ -429,6 +429,14 @@ class Tetra3():
                 # Generate and save database
                 t3.generate_database(max_fov=20, save_as='my_database_name')
 
+        Database format:
+            [Ra, Dec, r_x, r_y, r_z, mag] where
+
+            * (Ra, Dec) - Right ascention and declination of the star.
+            * (r_x, r_y, r_z) = (cos(Ra) * cos(Dec), sin(Ra) * cos(Dec), sin(Dec)) - Unit vector on the celestial sphere
+                                                                                     pointing to the star.
+            * mag - Magnitude of the star.
+
 
         """
         self._logger.debug('Got generate pattern catalogue with input: '
@@ -872,6 +880,19 @@ class Tetra3():
                                                           num_extracted_stars,
                                                           1 - prob_single_star_mismatch)
                     if prob_mismatch < match_threshold:
+
+                        """Debug output
+                        print(f"{num_star_matches} stars matched.")
+                        for i in range(num_star_matches):
+                            print("Matched vector on the image")
+                            print(match_tuples[i][0])
+                            print("Matched database vectors")
+                            print(match_tuples[i][1])
+                            print("Rotated vector")
+                            print(np.dot(rotation_matrix, match_tuples[i][1]))
+                            print()
+                        """
+
                         # Solved in this time
                         t_solve = (precision_timestamp() - t0_solve)*1000
                         # diplay mismatch probability in scientific notation
@@ -900,7 +921,10 @@ class Tetra3():
                         self._logger.debug('RESID: %.2f' % residual + ' asec')
                         return {'RA': ra, 'Dec': dec, 'Roll': roll, 'FOV': np.rad2deg(fov),
                                 'RMSE': residual, 'Matches': len(match_tuples),
-                                'Prob': prob_mismatch, 'T_solve': t_solve, 'T_extract': t_extract}
+                                'Prob': prob_mismatch, 'T_solve': t_solve, 'T_extract': t_extract,
+                                'matched_vectors': [x[0] for x in match_tuples],
+                                'matched_database_vectors': [x[1] for x in match_tuples],
+                                'rotation_matrix': rotation_matrix}
         t_solve = (precision_timestamp() - t0_solve) * 1000
         self._logger.debug('FAIL: Did not find a match to the stars! It took '
                            + str(round(t_solve)) + ' ms.')
